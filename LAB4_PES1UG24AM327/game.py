@@ -6,11 +6,14 @@ WIDTH, HEIGHT = COLS * CELL, ROWS * CELL + 30
 ZONE_TOP = ROWS - 6
 TICK, PLAYER_SPEED, BULLET_SPEED = 0.09, 260, 620
 MUSHROOM_HP = 4
+FLASH_TIME = 0.1
 
 
-def mushroom_color(hp):
+def mushroom_color(hp, flashing=False):
     """Return an (r, g, b) colour for a mushroom with the given hit points, or None for the default."""
-    pass
+    if flashing:
+        return (255, 255, 255)
+    return None
 
 
 def on_segment_hit(segment, score):
@@ -48,6 +51,7 @@ class Game:
     def reset(self):
         self.score, self.lives, self.wave, self.state = 0, 3, 1, "play"
         self.mushrooms = {}
+        self.flash = {}
         for _ in range(45):
             self.mushrooms[(random.randint(1, ZONE_TOP - 2), random.randint(0, COLS - 1))] = MUSHROOM_HP
         self.respawn()
@@ -72,7 +76,10 @@ class Game:
         self.mushrooms[cell] -= 1
         if self.mushrooms[cell] <= 0:
             del self.mushrooms[cell]
+            self.flash.pop(cell, None)
             self.score += 5
+        else:
+            self.flash[cell] = FLASH_TIME
 
     def split_chain(self, chain, index):
         segment = chain[index]
@@ -105,6 +112,7 @@ class Game:
         if self.state != "play":
             return
         self.invulnerable = max(0.0, self.invulnerable - dt)
+        self.flash = {cell: t - dt for cell, t in self.flash.items() if t - dt > 0}
         self.x += (keys[pygame.K_RIGHT] - keys[pygame.K_LEFT]) * PLAYER_SPEED * dt
         self.y += (keys[pygame.K_DOWN] - keys[pygame.K_UP]) * PLAYER_SPEED * dt
         self.x = max(10, min(WIDTH - 10, self.x))
@@ -132,7 +140,7 @@ class Game:
     def draw(self, screen):
         screen.fill((8, 8, 16))
         for (row, col), hp in self.mushrooms.items():
-            color = mushroom_color(hp) or (200 - (MUSHROOM_HP - hp) * 40, 80, 170)
+            color = mushroom_color(hp, (row, col) in self.flash) or (200 - (MUSHROOM_HP - hp) * 40, 80, 170)
             center = (col * CELL + CELL // 2, row * CELL + CELL // 2)
             pygame.draw.circle(screen, color, center, CELL // 2 - 1)
             pygame.draw.rect(screen, (230, 230, 200), (center[0] - 3, center[1], 6, CELL // 2 - 1))
