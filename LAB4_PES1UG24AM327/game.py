@@ -70,7 +70,7 @@ class Game:
 
     def hit_mushroom(self, cell):
         self.mushrooms[cell] -= 1
-        if self.mushrooms[cell] <= 1:
+        if self.mushrooms[cell] <= 0:
             del self.mushrooms[cell]
             self.score += 5
 
