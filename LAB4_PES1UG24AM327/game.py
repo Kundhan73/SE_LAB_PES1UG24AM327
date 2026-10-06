@@ -7,6 +7,8 @@ ZONE_TOP = ROWS - 6
 TICK, PLAYER_SPEED, BULLET_SPEED = 0.09, 260, 620
 MUSHROOM_HP = 4
 FLASH_TIME = 0.1
+SPARK_LIFE = 0.4
+sparks = []
 
 
 def mushroom_color(hp, flashing=False):
@@ -18,7 +20,11 @@ def mushroom_color(hp, flashing=False):
 
 def on_segment_hit(segment, score):
     """Called whenever a centipede segment is shot; add sparkles, sounds, or bonus points here."""
-    pass
+    cx = segment.col * CELL + CELL / 2
+    cy = segment.row * CELL + CELL / 2
+    for _ in range(12):
+        velocity = pygame.Vector2(random.uniform(80, 220), 0).rotate(random.uniform(0, 360))
+        sparks.append([pygame.Vector2(cx, cy), velocity, SPARK_LIFE])
 
 
 def wave_speed_bonus(wave):
@@ -52,6 +58,7 @@ class Game:
         self.score, self.lives, self.wave, self.state = 0, 3, 1, "play"
         self.mushrooms = {}
         self.flash = {}
+        sparks.clear()
         for _ in range(45):
             self.mushrooms[(random.randint(1, ZONE_TOP - 2), random.randint(0, COLS - 1))] = MUSHROOM_HP
         self.respawn()
@@ -113,6 +120,10 @@ class Game:
             return
         self.invulnerable = max(0.0, self.invulnerable - dt)
         self.flash = {cell: t - dt for cell, t in self.flash.items() if t - dt > 0}
+        for spark in sparks:
+            spark[0] += spark[1] * dt
+            spark[2] -= dt
+        sparks[:] = [spark for spark in sparks if spark[2] > 0]
         self.x += (keys[pygame.K_RIGHT] - keys[pygame.K_LEFT]) * PLAYER_SPEED * dt
         self.y += (keys[pygame.K_DOWN] - keys[pygame.K_UP]) * PLAYER_SPEED * dt
         self.x = max(10, min(WIDTH - 10, self.x))
@@ -148,6 +159,9 @@ class Game:
             for index, segment in enumerate(chain):
                 center = (segment.col * CELL + CELL // 2, segment.row * CELL + CELL // 2)
                 pygame.draw.circle(screen, (240, 200, 60) if index == 0 else (80, 220, 90), center, CELL // 2)
+        for pos, _, life in sparks:
+            fade = life / SPARK_LIFE
+            pygame.draw.circle(screen, (255, int(160 + 95 * fade), int(60 * fade)), (int(pos.x), int(pos.y)), max(1, int(3 * fade)))
         if self.bullet:
             pygame.draw.rect(screen, (255, 255, 255), (self.bullet.x - 1, self.bullet.y - 6, 3, 10))
         if self.invulnerable <= 0 or int(self.invulnerable * 10) % 2 == 0:
