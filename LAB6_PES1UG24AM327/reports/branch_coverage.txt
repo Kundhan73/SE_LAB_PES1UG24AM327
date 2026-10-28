@@ -1,0 +1,14 @@
+$ python3 -m coverage run --branch --data-file=.coverage.branch --source=shopping_cart -m pytest -q BranchCoverageTest_PES1UG24AM327_shopping_cart.py
+............................................................                                           [100%]
+60 passed in 0.09s
+
+$ python3 -m coverage report --data-file=.coverage.branch -m --fail-under=90
+Name               Stmts   Miss Branch BrPart  Cover   Missing
+--------------------------------------------------------------
+shopping_cart.py      32      0     22      0   100%
+--------------------------------------------------------------
+TOTAL                 32      0     22      0   100%
+
+$ python3 -m coverage json --data-file=.coverage.branch -o reports/branch_coverage.json
+Wrote JSON report to reports/branch_coverage.json
+
